@@ -10,11 +10,9 @@ run: build
     @./bin/main < input
 
 build:
-    @mkdir -p build
     @mkdir -p bin
 
     @{{CC}} {{FLAGS}} main.cpp src/*.cpp -o ./bin/main
 
 clean:
     @rm -r bin || true
-    @rm -r build || true
