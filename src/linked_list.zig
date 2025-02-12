@@ -29,14 +29,9 @@ pub fn LinkedList(comptime T: type) type {
         /// Destroyes all the allocated memmory.
         pub fn deinit(self: *Self) void {
             var it = self.head;
-            while (true) {
+            while (it != null) {
                 const next = it.?.next;
-                if (it != null) {
-                    self.alloc.destroy(it.?);
-                }
-                if (next == null) {
-                    break;
-                }
+                self.alloc.destroy(it.?);
                 it = next;
             }
         }
@@ -79,8 +74,8 @@ pub fn LinkedList(comptime T: type) type {
         }
 
         /// Adds a new element to the end of the list.
-        /// If the allocation fails add() will return an error.
-        pub fn add(self: *Self, value: T) !void {
+        /// If the allocation fails add_back() will return an error.
+        pub fn add_back(self: *Self, value: T) !void {
             var node = try self.alloc.create(Node);
             node.value = value;
             node.next = null;
@@ -99,6 +94,62 @@ pub fn LinkedList(comptime T: type) type {
             self.tail = node;
         }
 
+        /// Adds a new element to the end of the list.
+        /// If the allocation fails add_back() will return an error.
+        pub fn add_front(self: *Self, value: T) !void {
+            var node = try self.alloc.create(Node);
+            node.value = value;
+            node.next = null;
+
+            self.length += 1;
+
+            if (self.head == null) {
+                self.head = node;
+                self.tail = self.head;
+                return;
+            }
+
+            std.debug.assert(self.head != null);
+
+            node.next = self.head;
+            self.head = node;
+        }
+
+        /// Pops the element from the back, nothing hapends
+        /// if there is no element in the list.
+        pub fn pop(self: *Self) void {
+            if (self.length == 0) return;
+
+            if (self.length == 1) {
+                self.alloc.destroy(self.tail.?);
+
+                self.head = null;
+                self.tail = null;
+                self.length -= 1;
+                return;
+            }
+
+            // 1 -> 2 -> 3 -> 4
+            var new_last = self.head;
+            std.debug.assert(self.head != null);
+            std.debug.assert(self.length - 2 >= 0);
+
+            var i: usize = 2;
+            while (i < self.length) : (i += 1) {
+                new_last = new_last.?.next;
+            }
+            std.debug.assert(new_last != null);
+
+            std.debug.assert(self.tail != null);
+            self.alloc.destroy(self.tail.?);
+
+            new_last.?.next = null;
+            self.tail = new_last;
+
+            self.length -= 1;
+        }
+
+        /// Iterates the linked list outputting the value of each node
         pub fn dbg(self: *Self) void {
             var it = self.head;
             while (true) {
@@ -113,20 +164,30 @@ pub fn LinkedList(comptime T: type) type {
     };
 }
 
-test "simple linked list" {
+test "deinit_empty" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var nums = LinkedList(i32).init(alloc);
+    defer nums.deinit();
+}
+
+test "adding to the linked list" {
     const testing = std.testing;
     const alloc = testing.allocator;
 
     var nums = LinkedList(i32).init(alloc);
     defer nums.deinit();
 
-    try testing.expectEqual(nums.first(), null);
-    try testing.expectEqual(nums.last(), null);
+    try testing.expectEqual(null, nums.first());
+    try testing.expectEqual(null, nums.last());
 
     const elems: [5]i32 = .{ 3, 4, 5, 1, 9 };
     for (0..elems.len) |i| {
-        try nums.add(elems[i]);
+        try nums.add_back(elems[i]);
     }
+
+    try testing.expectEqual(elems.len, nums.length);
 
     try testing.expectEqual(3, nums.first());
     try testing.expectEqual(9, nums.last());
@@ -134,4 +195,72 @@ test "simple linked list" {
     try testing.expectEqual(4, nums.nth(1));
     try testing.expectEqual(5, nums.nth(2));
     try testing.expectEqual(null, nums.nth(5));
+
+    try nums.add_front(56);
+
+    try testing.expectEqual(56, nums.first());
+    try testing.expectEqual(56, nums.nth(0));
+    try testing.expectEqual(3, nums.nth(1));
+}
+test "popping from the linked list" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var nums = LinkedList(i32).init(alloc);
+    defer nums.deinit();
+
+    nums.pop();
+
+    try nums.add_back(5);
+    try testing.expectEqual(1, nums.length);
+    try testing.expectEqual(5, nums.first());
+    try testing.expectEqual(5, nums.last());
+
+    try nums.add_back(8);
+    try testing.expectEqual(2, nums.length);
+    try testing.expectEqual(5, nums.first());
+    try testing.expectEqual(8, nums.last());
+
+    try nums.add_back(9);
+    try testing.expectEqual(3, nums.length);
+    try testing.expectEqual(5, nums.first());
+    try testing.expectEqual(9, nums.last());
+
+    try nums.add_back(2);
+    try testing.expectEqual(4, nums.length);
+    try testing.expectEqual(5, nums.first());
+    try testing.expectEqual(2, nums.last());
+
+    nums.pop();
+
+    try testing.expectEqual(3, nums.length);
+    try testing.expectEqual(5, nums.first());
+    try testing.expectEqual(9, nums.last());
+    try testing.expectEqual(9, nums.nth(2));
+    try testing.expectEqual(null, nums.nth(3));
+}
+
+test "popping each time from the linked list" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+
+    var nums = LinkedList(i32).init(alloc);
+    defer nums.deinit();
+
+    nums.pop();
+
+    try nums.add_back(5);
+    nums.pop();
+
+    try nums.add_back(5);
+    try nums.add_back(8);
+    nums.pop();
+
+    try nums.add_back(8);
+    try nums.add_back(9);
+    nums.pop();
+
+    try nums.add_back(9);
+    try nums.add_back(2);
+    nums.pop();
 }

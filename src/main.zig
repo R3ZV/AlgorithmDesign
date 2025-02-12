@@ -2,18 +2,35 @@ const std = @import("std");
 const LinkedList = @import("linked_list.zig").LinkedList;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // const alloc = gpa.allocator();
 
-    var nums = LinkedList(i32).init(alloc);
-    defer nums.deinit();
+    // var nums = LinkedList(u32).init(alloc);
+    // defer nums.deinit();
 
-    const elems: [5]i32 = .{ 3, 4, 5, 1, 9 };
-    for (0..elems.len) |i| {
-        try nums.add(elems[i]);
+    const N = 8 * 4096;
+    var nums: [N]u32 = undefined;
+    for (0..N) |i| {
+        nums[i] = @intCast(i);
     }
 
-    nums.dbg();
+    var sum: u64 = 0;
+    for (0..N) |i| {
+        sum += nums[i];
+    }
+
+    // for (0..N) |i| {
+    //     try nums.add_back(@intCast(i));
+    // }
+
+    // var sum: u64 = 0;
+    // var node = nums.head;
+    // while (node != null) {
+    //     sum += node.?.value;
+    //     node = node.?.next;
+    // }
+
+    // nums.dbg();
 }
 
 test {
