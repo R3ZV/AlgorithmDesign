@@ -85,6 +85,8 @@ pub fn LinkedList(comptime T: type) type {
             node.value = value;
             node.next = null;
 
+            self.length += 1;
+
             if (self.head == null) {
                 self.head = node;
                 self.tail = self.head;
@@ -126,10 +128,10 @@ test "simple linked list" {
         try nums.add(elems[i]);
     }
 
-    try testing.expectEqual(nums.first(), 3);
-    try testing.expectEqual(nums.last(), 9);
+    try testing.expectEqual(3, nums.first());
+    try testing.expectEqual(9, nums.last());
 
-    try testing.expectEqual(nums.nth(1), 4);
-    try testing.expectEqual(nums.nth(2), 5);
-    try testing.expectEqual(nums.nth(5), null);
+    try testing.expectEqual(4, nums.nth(1));
+    try testing.expectEqual(5, nums.nth(2));
+    try testing.expectEqual(null, nums.nth(5));
 }
